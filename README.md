@@ -68,6 +68,25 @@ deep-research-mcp
 
 The server requires a Tavily API key and can optionally accept a custom documentation prompt.
 
+```json
+{
+  "mcpServers": {
+    "deep-research": { 
+      "command": "npx",
+      "args": [
+        "-y",
+        "@pinkpixel/deep-research-mcp" 
+      ],
+      "env": {
+        "TAVILY_API_KEY": "tvly-YOUR_ACTUAL_API_KEY_HERE", // Required
+        "DOCUMENTATION_PROMPT": "Your custom, detailed instructions for the LLM on how to generate markdown documents from the research data...", // Optional - if not provided, the default prompt will be used
+        "RESEARCH_OUTPUT_PATH": "/path/to/your/research/output/folder" // Optional - if not provided, the default path will be used
+      }
+    }
+  }
+}
+```
+
 ### 1\. Tavily API Key (Required)
 
 Set the `TAVILY_API_KEY` environment variable to your Tavily API key.
@@ -95,11 +114,13 @@ You can override the default comprehensive documentation prompt by setting the `
 3. **Default Value:** If neither of the above are set, the comprehensive built-in default prompt is used
 
 **Setting via `.env` file:**
+
 ```env
 DOCUMENTATION_PROMPT="Your custom, detailed instructions for the LLM on how to generate markdown..."
 ```
 
 **Or directly in command line:**
+
 ```bash
 DOCUMENTATION_PROMPT="Your custom prompt..." TAVILY_API_KEY="tvly-YOUR_KEY" npx @pinkpixel/deep-research-mcp
 ```
@@ -115,11 +136,13 @@ You can specify where research documents and images should be saved. If not conf
 3. **Default Path:** If neither of the above are set, a timestamped subfolder in the user's Documents folder is used: `~/Documents/research/YYYY-MM-DDTHH-MM-SS/`
 
 **Setting via `.env` file:**
+
 ```env
 RESEARCH_OUTPUT_PATH="/path/to/your/research/folder"
 ```
 
 **Or directly in command line:**
+
 ```bash
 RESEARCH_OUTPUT_PATH="/path/to/your/research/folder" TAVILY_API_KEY="tvly-YOUR_KEY" npx @pinkpixel/deep-research-mcp
 ```
@@ -260,18 +283,20 @@ The `deep-research-tool` accepts the following parameters in its `arguments` obj
 The `documentation_prompt` is an essential part of this tool as it guides the LLM in how to format and structure the research findings. The system uses this precedence to determine which prompt to use:
 
 1. If the LLM/agent provides a `documentation_prompt` parameter in the tool call:
+
    - This takes highest precedence and will be used regardless of other settings
    - This allows end users to customize documentation format through natural language requests to the LLM
-
 2. If no parameter is provided in the tool call, but the `DOCUMENTATION_PROMPT` environment variable is set:
+
    - The environment variable value will be used
    - This is useful for system administrators or developers to set a consistent prompt across all tool calls
-
 3. If neither of the above are set:
+
    - The comprehensive built-in default prompt is used
    - This default prompt is designed to produce high-quality technical documentation
 
 This flexibility allows:
+
 - End users to customize documentation through natural language requests to the LLM
 - Developers to set system-wide defaults
 - A fallback to well-designed defaults if no customization is provided
@@ -287,14 +312,15 @@ The `output_path` parameter determines where research documents and images will 
 The system follows this precedence to determine the output path:
 
 1. If the LLM/agent provides an `output_path` parameter in the tool call:
+
    - This takes highest precedence
    - Allows end users to specify a custom save location through natural language requests
-
 2. If no parameter is provided, but the `RESEARCH_OUTPUT_PATH` environment variable is set:
+
    - The environment variable value will be used
    - Good for system-wide configuration
-
 3. If neither of the above are set:
+
    - A default path with timestamp is used: `~/Documents/research/YYYY-MM-DDTHH-MM-SS/`
    - This prevents overwriting previous research results
 
@@ -363,12 +389,14 @@ An agent might make a call to the MCP server with arguments like this:
 ## Changelog
 
 ### v0.1.2 (2024-05-10)
+
 - Added configurable output path functionality
 - Fixed type errors with latest Tavily SDK
 - Added comprehensive documentation about output paths
 - Added logo and improved documentation
 
 ### v0.1.1
+
 - Initial public release
 
 ## Contributing

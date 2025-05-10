@@ -198,6 +198,7 @@ interface DeepResearchToolArguments {
     crawl_timeout?: number;
     documentation_prompt?: string; // For custom documentation instructions
     output_path?: string; // Path where research documents and images should be saved
+    hardware_acceleration?: boolean;
 }
 
 // Structure for storing combined search and crawl results for one source
@@ -237,6 +238,19 @@ interface TavilySearchParams {
     timeout?: number;
 }
 
+// Add the necessary TavilyCrawlCategory type
+type TavilyCrawlCategory = 
+    | "Careers" 
+    | "Blog" 
+    | "Documentation" 
+    | "About" 
+    | "Pricing" 
+    | "Community" 
+    | "Developers" 
+    | "Contact" 
+    | "Media";
+
+// Update interface with all required fields
 interface TavilyCrawlParams {
     url: string;
     maxDepth?: number;
@@ -249,7 +263,7 @@ interface TavilyCrawlParams {
     excludeDomains?: string[];
     allowExternal?: boolean;
     includeImages?: boolean;
-    categories?: string[];
+    categories?: TavilyCrawlCategory[];
     extractDepth?: "basic" | "advanced";
     timeout?: number;
 }
@@ -262,7 +276,7 @@ class DeepResearchMcpServer {
         this.server = new Server(
             {
                 name: "deep-research-mcp",
-                version: "0.1.1", // Increment version for new features/fixes
+                version: "1.0.0", // Increment version for new features/fixes
             },
             {
                 capabilities: {
@@ -292,7 +306,7 @@ class DeepResearchMcpServer {
         };
 
         const shutdown = async () => {
-            console.log("Shutting down DeepResearchMcpServer...");
+            console.error("Shutting down DeepResearchMcpServer...");
             try {
                 await this.server.close();
             } catch (err) {
@@ -324,23 +338,30 @@ class DeepResearchMcpServer {
                             chunks_per_source: { type: "number", default: 3, minimum: 1, maximum: 3, description: "For 'advanced' search: number of content chunks from each source (1-3)." },
                             include_search_images: { type: "boolean", default: false, description: "Include image URLs from initial search results." },
                             include_search_image_descriptions: { type: "boolean", default: false, description: "Include image descriptions from initial search results." },
-                            include_answer: { oneOf: [{ type: "boolean" }, { type: "string", enum: ["basic", "advanced"] }], default: false, description: "Include an LLM-generated answer from Tavily search (true implies 'basic')." },
+                            include_answer: { 
+                                anyOf: [
+                                    { type: "boolean" }, 
+                                    { type: "string", enum: ["basic", "advanced"] }
+                                ],
+                                default: false, 
+                                description: "Include an LLM-generated answer from Tavily search (true implies 'basic')." 
+                            },
                             include_raw_content_search: { type: "boolean", default: false, description: "Include cleaned HTML from initial search results." },
                             include_domains_search: { type: "array", items: { type: "string" }, default: [], description: "List of domains to specifically include in search." },
                             exclude_domains_search: { type: "array", items: { type: "string" }, default: [], description: "List of domains to specifically exclude from search." },
                             search_timeout: { type: "number", default: 60, description: "Timeout in seconds for Tavily search requests." },
-                            crawl_max_depth: { type: "number", default: 1, description: "Max crawl depth from base URL (0 for base URL only, 1 for base + its links, etc.)." },
-                            crawl_max_breadth: { type: "number", default: 5, description: "Max links to follow per page level during crawl." },
-                            crawl_limit: { type: "number", default: 10, description: "Total links crawler will process per root URL." },
+                            crawl_max_depth: { type: "number", default: 1, description: "Max crawl depth from base URL (1-2). Higher values increase processing time significantly." },
+                            crawl_max_breadth: { type: "number", default: 10, description: "Max links to follow per page level during crawl (1-10)." },
+                            crawl_limit: { type: "number", default: 10, description: "Total links crawler will process per root URL (1-20)." },
                             crawl_instructions: { type: "string", description: "Natural language instructions for the crawler." },
                             crawl_select_paths: { type: "array", items: { type: "string" }, default: [], description: "Regex for URLs paths to crawl (e.g., '/docs/.*')." },
                             crawl_select_domains: { type: "array", items: { type: "string" }, default: [], description: "Regex for domains/subdomains to crawl (e.g., '^docs\\.example\\.com$'). Overrides auto-domain focus." },
                             crawl_exclude_paths: { type: "array", items: { type: "string" }, default: [], description: "Regex for URL paths to exclude." },
                             crawl_exclude_domains: { type: "array", items: { type: "string" }, default: [], description: "Regex for domains/subdomains to exclude." },
                             crawl_allow_external: { type: "boolean", default: false, description: "Allow crawler to follow links to external domains." },
-                            crawl_include_images: { type: "boolean", default: true, description: "Extract image URLs from crawled pages." },
+                            crawl_include_images: { type: "boolean", default: false, description: "Extract image URLs from crawled pages." },
                             crawl_categories: { type: "array", items: { type: "string" }, default: [], description: "Filter crawl URLs by categories (e.g., 'Blog', 'Documentation')." },
-                            crawl_extract_depth: { type: "string", enum: ["basic", "advanced"], default: "advanced", description: "Extraction depth for crawl ('basic' or 'advanced'). Advanced gets more data but may be slower." },
+                            crawl_extract_depth: { type: "string", enum: ["basic", "advanced"], default: "basic", description: "Extraction depth for crawl ('basic' or 'advanced')." },
                             crawl_timeout: { type: "number", default: 180, description: "Timeout in seconds for Tavily crawl requests." },
                             documentation_prompt: {
                                 type: "string",
@@ -350,6 +371,7 @@ class DeepResearchMcpServer {
                                 type: "string",
                                 description: "Optional. Path where generated research documents and images should be saved. If not provided, a default path in user's Documents folder with timestamp will be used.",
                             },
+                            hardware_acceleration: { type: "boolean", default: false, description: "Try to use hardware acceleration (WebGPU) if available." },
                         },
                         required: ["query"],
                     },
@@ -401,6 +423,7 @@ class DeepResearchMcpServer {
                     crawl_timeout: rawArgs.crawl_timeout as number | undefined,
                     documentation_prompt: rawArgs.documentation_prompt as string | undefined,
                     output_path: rawArgs.output_path as string | undefined,
+                    hardware_acceleration: rawArgs.hardware_acceleration as boolean | undefined,
                 };
 
                 if (!args.query) {
@@ -434,6 +457,23 @@ class DeepResearchMcpServer {
                 }
 
                 try {
+                    // Check if hardware acceleration is requested for this specific call
+                    if (args.hardware_acceleration) {
+                        console.error("Hardware acceleration requested for this research query");
+                        try {
+                            // Try to enable Node.js flags for GPU if not already enabled
+                            process.env.NODE_OPTIONS = process.env.NODE_OPTIONS || '';
+                            if (!process.env.NODE_OPTIONS.includes('--enable-webgpu')) {
+                                process.env.NODE_OPTIONS += ' --enable-webgpu';
+                                console.error("Added WebGPU flag to Node options");
+                            } else {
+                                console.error("WebGPU flag already present in Node options");
+                            }
+                        } catch (err) {
+                            console.error("Failed to set hardware acceleration:", err);
+                        }
+                    }
+                    
                     // Convert our parameters to Tavily Search API format
                     const searchParams: TavilySearchParams = {
                         query: args.query,
@@ -459,14 +499,42 @@ class DeepResearchMcpServer {
                         searchParams.timeRange = args.time_range;
                     }
 
-                    console.debug("Tavily Search API Parameters:", JSON.stringify(searchParams, null, 2));
-                    // Cast to any to work around type mismatch - the API expects one parameter according to docs
-                    const searchResponse = await (this.tavilyClient.search as any)(searchParams);
-                    console.debug("Tavily Search API Response (summary):", {
-                        query: searchResponse.query,
-                        resultsCount: searchResponse.results?.length ?? 0,
-                        answer: searchResponse.answer ? "Exists" : "None"
-                    });
+                    console.error("Tavily Search API Parameters:", JSON.stringify(searchParams, null, 2));
+                    // Set search timeout for faster response
+                    const searchTimeout = args.search_timeout ?? 60; // Default 60 seconds
+                    console.error(`Starting search with timeout: ${searchTimeout}s`);
+                    const startSearchTime = Date.now();
+                    
+                    // Execute search with timeout
+                    let searchResponse: any; // Use any to avoid unknown type errors
+                    try {
+                        searchResponse = await Promise.race([
+                            this.tavilyClient.search(searchParams.query, {
+                                searchDepth: searchParams.searchDepth,
+                                topic: searchParams.topic,
+                                maxResults: searchParams.maxResults,
+                                chunksPerSource: searchParams.chunksPerSource,
+                                includeImages: searchParams.includeImages,
+                                includeImageDescriptions: searchParams.includeImageDescriptions,
+                                // Convert string types to boolean for includeAnswer
+                                includeAnswer: typeof searchParams.includeAnswer === 'boolean' ? 
+                                    searchParams.includeAnswer : false,
+                                includeRawContent: searchParams.includeRawContent,
+                                includeDomains: searchParams.includeDomains,
+                                excludeDomains: searchParams.excludeDomains,
+                                // Fix timeRange to match allowed values
+                                timeRange: (searchParams.timeRange as "year" | "month" | "week" | "day" | "y" | "m" | "w" | "d" | undefined),
+                                days: searchParams.days
+                            }),
+                            new Promise((_, reject) => 
+                                setTimeout(() => reject(new Error(`Search timeout after ${searchTimeout}s`)), searchTimeout * 1000)
+                            )
+                        ]);
+                        console.error(`Search completed in ${((Date.now() - startSearchTime) / 1000).toFixed(1)}s`);
+                    } catch (error: any) {
+                        console.error(`Search error: ${error.message}`);
+                        throw error;
+                    }
 
                     const combinedResults: CombinedResult[] = [];
                     let searchRank = 1;
@@ -479,9 +547,7 @@ class DeepResearchMcpServer {
                             research_data: [],
                         }, null, 2);
                         return {
-                            tools: {
-                                content: [{ type: "text", text: noResultsOutput }],
-                            }
+                            content: [{ type: "text", text: noResultsOutput }]
                         };
                     }
 
@@ -491,35 +557,45 @@ class DeepResearchMcpServer {
                             continue;
                         }
 
-                        // Convert our parameters to Tavily Crawl API format
+                        // Ensure crawl parameters are strictly enforced with smaller defaults
                         const crawlParams: TavilyCrawlParams = {
                             url: searchResult.url,
-                            maxDepth: args.crawl_max_depth ?? 1,
-                            maxBreadth: args.crawl_max_breadth ?? 5,
-                            limit: args.crawl_limit ?? 10,
-                            instructions: args.crawl_instructions,
+                            maxDepth: Math.min(2, args.crawl_max_depth ?? 1), // Hard cap at 2, default to 1
+                            maxBreadth: Math.min(10, args.crawl_max_breadth ?? 10), // Hard cap at 10, default to 10 (down from 20)
+                            limit: Math.min(20, args.crawl_limit ?? 10), // Hard cap at 20, default to 10 (down from 50)
+                            instructions: args.crawl_instructions || "",
                             selectPaths: args.crawl_select_paths ?? [],
+                            selectDomains: args.crawl_select_domains ?? [],
                             excludePaths: args.crawl_exclude_paths ?? [],
                             excludeDomains: args.crawl_exclude_domains ?? [],
                             allowExternal: args.crawl_allow_external ?? false,
-                            includeImages: args.crawl_include_images ?? true,
-                            categories: args.crawl_categories ?? [],
-                            extractDepth: args.crawl_extract_depth ?? "advanced",
-                            timeout: args.crawl_timeout ?? 180,
+                            includeImages: args.crawl_include_images ?? false,
+                            categories: (args.crawl_categories ?? []) as TavilyCrawlCategory[],
+                            extractDepth: args.crawl_extract_depth ?? "basic"
                         };
-
-                        if (args.crawl_select_domains && args.crawl_select_domains.length > 0) {
-                            crawlParams.selectDomains = args.crawl_select_domains;
-                        } else if (!crawlParams.allowExternal) {
+                        
+                        // If no select_domains provided and not allowing external domains, 
+                        // restrict to the current domain to prevent excessive crawling
+                        if ((!args.crawl_select_domains || args.crawl_select_domains.length === 0) && 
+                            !crawlParams.allowExternal) {
                             try {
                                 const currentUrlDomain = new URL(searchResult.url).hostname;
                                 crawlParams.selectDomains = [`^${currentUrlDomain.replace(/\./g, "\\.")}$`];
+                                console.error(`Auto-limiting crawl to domain: ${currentUrlDomain}`);
                             } catch (e: any) {
-                                console.warn(`Could not parse URL to set selectDomains for crawl: ${searchResult.url}. Error: ${e.message}`);
+                                console.error(`Could not parse URL to limit crawl domain: ${searchResult.url}. Error: ${e.message}`);
                             }
                         }
 
-                        console.debug(`Crawling URL: ${searchResult.url} with params:`, JSON.stringify(crawlParams, null, 2));
+                        console.error(`Crawling ${searchResult.url} with maxDepth=${crawlParams.maxDepth}, maxBreadth=${crawlParams.maxBreadth}, limit=${crawlParams.limit}`);
+                        
+                        // Add memory usage tracking
+                        if (process.memoryUsage) {
+                            const memUsage = process.memoryUsage();
+                            console.error(`Memory usage before crawl: RSS=${Math.round(memUsage.rss / 1024 / 1024)}MB, Heap=${Math.round(memUsage.heapUsed / 1024 / 1024)}MB`);
+                        }
+
+                        console.error(`Crawling URL: ${searchResult.url} with params:`, JSON.stringify(crawlParams, null, 2));
                         const currentCombinedResult: CombinedResult = {
                             search_rank: searchRank++,
                             original_url: searchResult.url,
@@ -532,12 +608,52 @@ class DeepResearchMcpServer {
                         };
 
                         try {
-                            // Cast to any to work around type mismatch - the API expects one parameter according to docs
-                            const crawlResponse = await (this.tavilyClient.crawl as any)(crawlParams);
-                            console.debug(`Crawl response for ${searchResult.url} (summary):`, {
-                                baseUrl: crawlResponse.baseUrl,
-                                resultsCount: crawlResponse.results?.length ?? 0
-                            });
+                            const startCrawlTime = Date.now();
+                            const crawlTimeout = args.crawl_timeout ?? 180; // Default 3 minutes
+                            console.error(`Starting crawl with timeout: ${crawlTimeout}s`);
+                            
+                            // Progress tracking for the crawl
+                            let progressTimer = setInterval(() => {
+                                const elapsedSec = (Date.now() - startCrawlTime) / 1000;
+                                console.error(`Crawl in progress... (${elapsedSec.toFixed(0)}s elapsed)`);
+                            }, 15000); // Report every 15 seconds
+                            
+                            // Ensure timer is always cleared
+                            let crawlResponse: any; // Use any to avoid unknown type errors
+                            try {
+                                // Execute crawl with timeout
+                                crawlResponse = await Promise.race([
+                                    this.tavilyClient.crawl(crawlParams.url, {
+                                        // Ensure all parameters have non-undefined values to match API requirements
+                                        maxDepth: crawlParams.maxDepth ?? 1,
+                                        maxBreadth: crawlParams.maxBreadth ?? 10,
+                                        limit: crawlParams.limit ?? 10,
+                                        instructions: crawlParams.instructions ?? "",
+                                        selectPaths: crawlParams.selectPaths ?? [],
+                                        selectDomains: crawlParams.selectDomains ?? [],
+                                        excludePaths: crawlParams.excludePaths ?? [],
+                                        excludeDomains: crawlParams.excludeDomains ?? [],
+                                        allowExternal: crawlParams.allowExternal ?? false,
+                                        includeImages: crawlParams.includeImages ?? false,
+                                        // Cast categories to the proper type
+                                        categories: (crawlParams.categories ?? []) as TavilyCrawlCategory[],
+                                        extractDepth: crawlParams.extractDepth ?? "basic",
+                                        // Add the required timeout parameter
+                                        timeout: args.crawl_timeout ?? 180
+                                    }),
+                                    new Promise((_, reject) => 
+                                        setTimeout(() => reject(new Error(`Crawl timeout after ${crawlTimeout}s`)), crawlTimeout * 1000)
+                                    )
+                                ]);
+                            } catch (err) {
+                                clearInterval(progressTimer); // Clear timer on error
+                                throw err; // Re-throw to be caught by outer try/catch
+                            }
+                            
+                            // Clear the progress timer once the crawl is complete
+                            clearInterval(progressTimer);
+                            
+                            console.error(`Crawl completed in ${((Date.now() - startCrawlTime) / 1000).toFixed(1)}s`);
 
                             if (crawlResponse.results && crawlResponse.results.length > 0) {
                                 crawlResponse.results.forEach((page: any) => {
@@ -549,6 +665,22 @@ class DeepResearchMcpServer {
                                 });
                             } else {
                                 currentCombinedResult.crawl_errors.push(`No content pages returned from crawl of ${searchResult.url}.`);
+                            }
+
+                            // After crawl completes, log memory usage
+                            if (process.memoryUsage) {
+                                const memUsage = process.memoryUsage();
+                                console.error(`Memory usage after crawl: RSS=${Math.round(memUsage.rss / 1024 / 1024)}MB, Heap=${Math.round(memUsage.heapUsed / 1024 / 1024)}MB`);
+                                
+                                // Force garbage collection if available and memory usage is high
+                                if (memUsage.heapUsed > 500 * 1024 * 1024 && global.gc) {
+                                    console.error("Memory usage high, forcing garbage collection");
+                                    try {
+                                        global.gc();
+                                    } catch (e) {
+                                        console.error("Failed to force garbage collection", e);
+                                    }
+                                }
                             }
                         } catch (crawlError: any) {
                             const errorMessage = crawlError.response?.data?.error || crawlError.message || 'Unknown crawl error';
@@ -569,9 +701,7 @@ class DeepResearchMcpServer {
                     }, null, 2);
 
                     return {
-                        tools: {
-                            content: [{ type: "text", text: outputText }]
-                        }
+                        content: [{ type: "text", text: outputText }]
                     };
 
                 } catch (error: any) {
@@ -586,10 +716,8 @@ class DeepResearchMcpServer {
                     }, null, 2);
 
                     return {
-                        tools: {
-                            content: [{ type: "text", text: errorOutput }],
-                            isError: true
-                        }
+                        content: [{ type: "text", text: errorOutput }],
+                        isError: true
                     };
                 }
             }
@@ -599,6 +727,22 @@ class DeepResearchMcpServer {
     public async run(): Promise<void> {
         const transport = new StdioServerTransport();
         await this.server.connect(transport);
+        
+        // Check if we should try to enable hardware acceleration
+        const useHardwareAcceleration = process.env.HARDWARE_ACCELERATION === 'true';
+        if (useHardwareAcceleration) {
+            console.error("Attempting to enable hardware acceleration");
+            try {
+                // Try to enable Node.js flags for GPU
+                process.env.NODE_OPTIONS = process.env.NODE_OPTIONS || '';
+                if (!process.env.NODE_OPTIONS.includes('--enable-webgpu')) {
+                    process.env.NODE_OPTIONS += ' --enable-webgpu';
+                }
+            } catch (err) {
+                console.error("Failed to set hardware acceleration:", err);
+            }
+        }
+        
         console.error(
             "Deep Research MCP Server (deep-research-mcp) is running and connected via stdio.\n" +
             `Documentation prompt source: ` +
