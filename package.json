@@ -1,0 +1,62 @@
+{
+  "name": "@pinkpixel/deep-research-mcp",
+  "version": "0.1.2",
+  "description": "A Model Context Protocol (MCP) server for performing deep web research using Tavily Search and Crawl APIs, preparing structured data for LLM-powered documentation generation.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "deep-research-mcp": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "nodemon --watch src -e ts --exec ts-node src/index.ts",
+    "serve": "npm run build && npm start",
+    "lint": "eslint src/**/*.ts",
+    "format": "eslint src/**/*.ts --fix",
+    "prepublishOnly": "npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pinkpixel-dev/deep-research-mcp.git"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "tavily",
+    "ai",
+    "llm",
+    "research",
+    "web-crawl",
+    "documentation"
+  ],
+  "author": "PinkPixel",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.11.1",
+    "@tavily/core": "^0.5.2",
+    "dotenv": "^16.5.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.17",
+    "@typescript-eslint/eslint-plugin": "^8.32.0",
+    "@typescript-eslint/parser": "^8.32.0",
+    "eslint": "^9.26.0",
+    "nodemon": "^3.1.10",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "assets",
+    "OVERVIEW.md"
+  ]
+}
