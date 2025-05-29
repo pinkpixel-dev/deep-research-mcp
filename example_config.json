@@ -9,12 +9,14 @@
       "env": {
         "TAVILY_API_KEY": "tvly-YOUR_ACTUAL_API_KEY_HERE",
         "DOCUMENTATION_PROMPT": "Your custom, detailed instructions for the LLM on how to generate markdown documents from the research data...",
-        "RESEARCH_OUTPUT_PATH": "/path/to/your/research/output/folder",
         "SEARCH_TIMEOUT": "120",
         "CRAWL_TIMEOUT": "300",
         "MAX_SEARCH_RESULTS": "10",
         "CRAWL_MAX_DEPTH": "2",
-        "CRAWL_LIMIT": "15"
+        "CRAWL_LIMIT": "15",
+        "FILE_WRITE_ENABLED": "true",
+        "ALLOWED_WRITE_PATHS": "/home/user/research,/home/user/documents",
+        "FILE_WRITE_LINE_LIMIT": "300"
       }
     }
   }

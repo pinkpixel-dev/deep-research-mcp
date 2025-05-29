@@ -80,12 +80,14 @@ The server requires a Tavily API key and can optionally accept a custom document
       "env": {
         "TAVILY_API_KEY": "tvly-YOUR_ACTUAL_API_KEY_HERE", // Required
         "DOCUMENTATION_PROMPT": "Your custom, detailed instructions for the LLM on how to generate markdown documents from the research data...", // Optional - if not provided, the default prompt will be used
-        "RESEARCH_OUTPUT_PATH": "/path/to/your/research/output/folder", // Optional - if not provided, the default path will be used
         "SEARCH_TIMEOUT": "120", // Optional - timeout in seconds for search requests (default: 60)
         "CRAWL_TIMEOUT": "300", // Optional - timeout in seconds for crawl requests (default: 180)
         "MAX_SEARCH_RESULTS": "10", // Optional - maximum search results to retrieve (default: 7)
         "CRAWL_MAX_DEPTH": "2", // Optional - maximum crawl depth (default: 1)
-        "CRAWL_LIMIT": "15" // Optional - maximum URLs to crawl per source (default: 10)
+        "CRAWL_LIMIT": "15", // Optional - maximum URLs to crawl per source (default: 10)
+        "FILE_WRITE_ENABLED": "true", // Optional - enable file writing capability (default: false)
+        "ALLOWED_WRITE_PATHS": "/home/user/research,/home/user/documents", // Optional - comma-separated allowed directories (default: user home directory)
+        "FILE_WRITE_LINE_LIMIT": "300" // Optional - maximum lines per file write operation (default: 200)
       }
     }
   }
@@ -186,6 +188,45 @@ SEARCH_TIMEOUT=120 CRAWL_TIMEOUT=300 TAVILY_API_KEY="tvly-YOUR_KEY" npx @pinkpix
 - **Decrease timeouts** for faster responses when working with simpler queries
 - **Increase limits** for more comprehensive research (but expect longer processing times)
 - **Decrease limits** for faster processing with lighter resource usage
+
+### 5\. File Writing Configuration (Optional)
+
+The server includes a secure file writing tool that allows LLMs to save research findings directly to files. This feature is **disabled by default** for security reasons.
+
+**Security Features:**
+- File writing must be explicitly enabled via `FILE_WRITE_ENABLED=true`
+- Directory restrictions via `ALLOWED_WRITE_PATHS` (defaults to user home directory)
+- Line limits per write operation to prevent abuse
+- Path validation and sanitization
+- Automatic directory creation
+
+**Configuration:**
+
+```env
+FILE_WRITE_ENABLED=true
+ALLOWED_WRITE_PATHS=/home/user/research,/home/user/documents,/tmp/research
+FILE_WRITE_LINE_LIMIT=500
+```
+
+**Usage Example:**
+Once enabled, LLMs can use the `write-research-file` tool to save content:
+
+```json
+{
+  "tool": "write-research-file",
+  "arguments": {
+    "file_path": "/home/user/research/quantum-computing-report.md",
+    "content": "# Quantum Computing Research Report\n\n...",
+    "mode": "rewrite"
+  }
+}
+```
+
+**Security Considerations:**
+- Only enable file writing in trusted environments
+- Use specific directory restrictions rather than allowing system-wide access
+- Monitor file operations through server logs
+- Consider using read-only directories for sensitive systems
 
 ## Running the Server
 

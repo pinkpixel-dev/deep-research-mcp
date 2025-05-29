@@ -11,7 +11,12 @@ All notable changes to the Deep Research MCP Server will be documented in this f
 - `MAX_SEARCH_RESULTS` environment variable for setting maximum search results
 - `CRAWL_MAX_DEPTH` environment variable for setting maximum crawl depth
 - `CRAWL_LIMIT` environment variable for setting maximum URLs to crawl per source
-- Enhanced startup logging showing current timeout and limit configurations
+- **NEW: File Writing Tool** - `write-research-file` tool for saving research content to files
+- `FILE_WRITE_ENABLED` environment variable to enable/disable file writing (default: disabled)
+- `ALLOWED_WRITE_PATHS` environment variable for directory restrictions (default: user home)
+- `FILE_WRITE_LINE_LIMIT` environment variable for write operation limits (default: 200 lines)
+- Secure file writing with path validation, directory creation, and permission controls
+- Enhanced startup logging showing current timeout, limit, and file writing configurations
 - Updated example configuration with new environment variables
 
 ### Fixed
@@ -20,7 +25,14 @@ All notable changes to the Deep Research MCP Server will be documented in this f
 
 ### Changed
 - Tool parameter precedence: tool arguments > environment variables > defaults
-- Improved documentation with detailed timeout and performance configuration guide
+- Improved documentation with detailed timeout, performance, and file writing configuration guides
+- Added comprehensive security documentation for file writing feature
+
+### Security
+- File writing feature disabled by default for security
+- Directory-based access controls for file operations
+- Path validation and sanitization to prevent directory traversal
+- Configurable line limits to prevent abuse
 
 ## [1.2.0] - 2024-05-29
 
