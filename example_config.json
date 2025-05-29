@@ -1,15 +1,20 @@
 {
   "mcpServers": {
-    "deep-research": { 
+    "deep-research": {
       "command": "npx",
       "args": [
         "-y",
-        "@pinkpixel/deep-research-mcp" 
+        "@pinkpixel/deep-research-mcp"
       ],
       "env": {
         "TAVILY_API_KEY": "tvly-YOUR_ACTUAL_API_KEY_HERE",
         "DOCUMENTATION_PROMPT": "Your custom, detailed instructions for the LLM on how to generate markdown documents from the research data...",
-        "RESEARCH_OUTPUT_PATH": "/path/to/your/research/output/folder"
+        "RESEARCH_OUTPUT_PATH": "/path/to/your/research/output/folder",
+        "SEARCH_TIMEOUT": "120",
+        "CRAWL_TIMEOUT": "300",
+        "MAX_SEARCH_RESULTS": "10",
+        "CRAWL_MAX_DEPTH": "2",
+        "CRAWL_LIMIT": "15"
       }
     }
   }

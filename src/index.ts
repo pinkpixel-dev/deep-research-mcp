@@ -25,6 +25,13 @@ if (!TAVILY_API_KEY) {
 
 const ENV_DOCUMENTATION_PROMPT = process.env.DOCUMENTATION_PROMPT;
 
+// Environment variables for timeout configuration
+const ENV_SEARCH_TIMEOUT = process.env.SEARCH_TIMEOUT ? parseInt(process.env.SEARCH_TIMEOUT, 10) : undefined;
+const ENV_CRAWL_TIMEOUT = process.env.CRAWL_TIMEOUT ? parseInt(process.env.CRAWL_TIMEOUT, 10) : undefined;
+const ENV_MAX_SEARCH_RESULTS = process.env.MAX_SEARCH_RESULTS ? parseInt(process.env.MAX_SEARCH_RESULTS, 10) : undefined;
+const ENV_CRAWL_MAX_DEPTH = process.env.CRAWL_MAX_DEPTH ? parseInt(process.env.CRAWL_MAX_DEPTH, 10) : undefined;
+const ENV_CRAWL_LIMIT = process.env.CRAWL_LIMIT ? parseInt(process.env.CRAWL_LIMIT, 10) : undefined;
+
 const DEFAULT_DOCUMENTATION_PROMPT = `
 For all queries, search the web extensively to acquire up to date information. Research several sources. Use all the tools provided to you to gather as much context as possible.
 Adhere to these guidelines when creating documentation:
@@ -239,15 +246,15 @@ interface TavilySearchParams {
 }
 
 // Add the necessary TavilyCrawlCategory type
-type TavilyCrawlCategory = 
-    | "Careers" 
-    | "Blog" 
-    | "Documentation" 
-    | "About" 
-    | "Pricing" 
-    | "Community" 
-    | "Developers" 
-    | "Contact" 
+type TavilyCrawlCategory =
+    | "Careers"
+    | "Blog"
+    | "Documentation"
+    | "About"
+    | "Pricing"
+    | "Community"
+    | "Developers"
+    | "Contact"
     | "Media";
 
 // Update interface with all required fields
@@ -334,25 +341,25 @@ class DeepResearchMcpServer {
                             topic: { type: "string", enum: ["general", "news"], default: "general", description: "Category for the Tavily search ('general' or 'news')." },
                             days: { type: "number", description: "For 'news' topic: number of days back from current date to include results." },
                             time_range: { type: "string", description: "Time range for search results (e.g., 'd' for day, 'w' for week, 'm' for month, 'y' for year)." },
-                            max_search_results: { type: "number", default: 7, minimum: 1, maximum: 20, description: "Max search results to retrieve for crawling (1-20)." },
+                            max_search_results: { type: "number", default: 7, minimum: 1, maximum: 20, description: "Max search results to retrieve for crawling (1-20). Can be set via MAX_SEARCH_RESULTS environment variable." },
                             chunks_per_source: { type: "number", default: 3, minimum: 1, maximum: 3, description: "For 'advanced' search: number of content chunks from each source (1-3)." },
                             include_search_images: { type: "boolean", default: false, description: "Include image URLs from initial search results." },
                             include_search_image_descriptions: { type: "boolean", default: false, description: "Include image descriptions from initial search results." },
-                            include_answer: { 
+                            include_answer: {
                                 anyOf: [
-                                    { type: "boolean" }, 
+                                    { type: "boolean" },
                                     { type: "string", enum: ["basic", "advanced"] }
                                 ],
-                                default: false, 
-                                description: "Include an LLM-generated answer from Tavily search (true implies 'basic')." 
+                                default: false,
+                                description: "Include an LLM-generated answer from Tavily search (true implies 'basic')."
                             },
                             include_raw_content_search: { type: "boolean", default: false, description: "Include cleaned HTML from initial search results." },
                             include_domains_search: { type: "array", items: { type: "string" }, default: [], description: "List of domains to specifically include in search." },
                             exclude_domains_search: { type: "array", items: { type: "string" }, default: [], description: "List of domains to specifically exclude from search." },
-                            search_timeout: { type: "number", default: 60, description: "Timeout in seconds for Tavily search requests." },
-                            crawl_max_depth: { type: "number", default: 1, description: "Max crawl depth from base URL (1-2). Higher values increase processing time significantly." },
+                            search_timeout: { type: "number", default: 60, description: "Timeout in seconds for Tavily search requests. Can be set via SEARCH_TIMEOUT environment variable." },
+                            crawl_max_depth: { type: "number", default: 1, description: "Max crawl depth from base URL (1-2). Higher values increase processing time significantly. Can be set via CRAWL_MAX_DEPTH environment variable." },
                             crawl_max_breadth: { type: "number", default: 10, description: "Max links to follow per page level during crawl (1-10)." },
-                            crawl_limit: { type: "number", default: 10, description: "Total links crawler will process per root URL (1-20)." },
+                            crawl_limit: { type: "number", default: 10, description: "Total links crawler will process per root URL (1-20). Can be set via CRAWL_LIMIT environment variable." },
                             crawl_instructions: { type: "string", description: "Natural language instructions for the crawler." },
                             crawl_select_paths: { type: "array", items: { type: "string" }, default: [], description: "Regex for URLs paths to crawl (e.g., '/docs/.*')." },
                             crawl_select_domains: { type: "array", items: { type: "string" }, default: [], description: "Regex for domains/subdomains to crawl (e.g., '^docs\\.example\\.com$'). Overrides auto-domain focus." },
@@ -362,7 +369,7 @@ class DeepResearchMcpServer {
                             crawl_include_images: { type: "boolean", default: false, description: "Extract image URLs from crawled pages." },
                             crawl_categories: { type: "array", items: { type: "string" }, default: [], description: "Filter crawl URLs by categories (e.g., 'Blog', 'Documentation')." },
                             crawl_extract_depth: { type: "string", enum: ["basic", "advanced"], default: "basic", description: "Extraction depth for crawl ('basic' or 'advanced')." },
-                            crawl_timeout: { type: "number", default: 180, description: "Timeout in seconds for Tavily crawl requests." },
+                            crawl_timeout: { type: "number", default: 180, description: "Timeout in seconds for Tavily crawl requests. Can be set via CRAWL_TIMEOUT environment variable." },
                             documentation_prompt: {
                                 type: "string",
                                 description: "Optional. Custom prompt for LLM documentation generation. Overrides 'DOCUMENTATION_PROMPT' env var and default. If none set, a comprehensive default is used.",
@@ -387,7 +394,7 @@ class DeepResearchMcpServer {
                     console.error("Invalid CallToolRequest structure:", request);
                     throw new McpError(ErrorCode.InvalidParams, "Invalid tool call request structure.");
                 }
-                
+
                 if (request.params.name !== "deep-research-tool") {
                     throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${request.params.name}`);
                 }
@@ -473,20 +480,20 @@ class DeepResearchMcpServer {
                             console.error("Failed to set hardware acceleration:", err);
                         }
                     }
-                    
+
                     // Convert our parameters to Tavily Search API format
                     const searchParams: TavilySearchParams = {
                         query: args.query,
                         searchDepth: args.search_depth ?? "advanced",
                         topic: args.topic ?? "general",
-                        maxResults: args.max_search_results ?? 7,
+                        maxResults: args.max_search_results ?? ENV_MAX_SEARCH_RESULTS ?? 7,
                         includeImages: args.include_search_images ?? false,
                         includeImageDescriptions: args.include_search_image_descriptions ?? false,
                         includeAnswer: args.include_answer ?? false,
                         includeRawContent: args.include_raw_content_search ?? false,
                         includeDomains: args.include_domains_search ?? [],
                         excludeDomains: args.exclude_domains_search ?? [],
-                        timeout: args.search_timeout ?? 60,
+                        timeout: args.search_timeout ?? ENV_SEARCH_TIMEOUT ?? 60,
                     };
 
                     if (searchParams.searchDepth === "advanced" && (args.chunks_per_source !== undefined && args.chunks_per_source !== null)) {
@@ -501,10 +508,10 @@ class DeepResearchMcpServer {
 
                     console.error("Tavily Search API Parameters:", JSON.stringify(searchParams, null, 2));
                     // Set search timeout for faster response
-                    const searchTimeout = args.search_timeout ?? 60; // Default 60 seconds
+                    const searchTimeout = args.search_timeout ?? ENV_SEARCH_TIMEOUT ?? 60; // Default 60 seconds
                     console.error(`Starting search with timeout: ${searchTimeout}s`);
                     const startSearchTime = Date.now();
-                    
+
                     // Execute search with timeout
                     let searchResponse: any; // Use any to avoid unknown type errors
                     try {
@@ -517,7 +524,7 @@ class DeepResearchMcpServer {
                                 includeImages: searchParams.includeImages,
                                 includeImageDescriptions: searchParams.includeImageDescriptions,
                                 // Convert string types to boolean for includeAnswer
-                                includeAnswer: typeof searchParams.includeAnswer === 'boolean' ? 
+                                includeAnswer: typeof searchParams.includeAnswer === 'boolean' ?
                                     searchParams.includeAnswer : false,
                                 includeRawContent: searchParams.includeRawContent,
                                 includeDomains: searchParams.includeDomains,
@@ -526,7 +533,7 @@ class DeepResearchMcpServer {
                                 timeRange: (searchParams.timeRange as "year" | "month" | "week" | "day" | "y" | "m" | "w" | "d" | undefined),
                                 days: searchParams.days
                             }),
-                            new Promise((_, reject) => 
+                            new Promise((_, reject) =>
                                 setTimeout(() => reject(new Error(`Search timeout after ${searchTimeout}s`)), searchTimeout * 1000)
                             )
                         ]);
@@ -560,9 +567,9 @@ class DeepResearchMcpServer {
                         // Ensure crawl parameters are strictly enforced with smaller defaults
                         const crawlParams: TavilyCrawlParams = {
                             url: searchResult.url,
-                            maxDepth: Math.min(2, args.crawl_max_depth ?? 1), // Hard cap at 2, default to 1
+                            maxDepth: Math.min(2, args.crawl_max_depth ?? ENV_CRAWL_MAX_DEPTH ?? 1), // Hard cap at 2, default to 1
                             maxBreadth: Math.min(10, args.crawl_max_breadth ?? 10), // Hard cap at 10, default to 10 (down from 20)
-                            limit: Math.min(20, args.crawl_limit ?? 10), // Hard cap at 20, default to 10 (down from 50)
+                            limit: Math.min(20, args.crawl_limit ?? ENV_CRAWL_LIMIT ?? 10), // Hard cap at 20, default to 10 (down from 50)
                             instructions: args.crawl_instructions || "",
                             selectPaths: args.crawl_select_paths ?? [],
                             selectDomains: args.crawl_select_domains ?? [],
@@ -573,10 +580,10 @@ class DeepResearchMcpServer {
                             categories: (args.crawl_categories ?? []) as TavilyCrawlCategory[],
                             extractDepth: args.crawl_extract_depth ?? "basic"
                         };
-                        
-                        // If no select_domains provided and not allowing external domains, 
+
+                        // If no select_domains provided and not allowing external domains,
                         // restrict to the current domain to prevent excessive crawling
-                        if ((!args.crawl_select_domains || args.crawl_select_domains.length === 0) && 
+                        if ((!args.crawl_select_domains || args.crawl_select_domains.length === 0) &&
                             !crawlParams.allowExternal) {
                             try {
                                 const currentUrlDomain = new URL(searchResult.url).hostname;
@@ -588,7 +595,7 @@ class DeepResearchMcpServer {
                         }
 
                         console.error(`Crawling ${searchResult.url} with maxDepth=${crawlParams.maxDepth}, maxBreadth=${crawlParams.maxBreadth}, limit=${crawlParams.limit}`);
-                        
+
                         // Add memory usage tracking
                         if (process.memoryUsage) {
                             const memUsage = process.memoryUsage();
@@ -609,15 +616,15 @@ class DeepResearchMcpServer {
 
                         try {
                             const startCrawlTime = Date.now();
-                            const crawlTimeout = args.crawl_timeout ?? 180; // Default 3 minutes
+                            const crawlTimeout = args.crawl_timeout ?? ENV_CRAWL_TIMEOUT ?? 180; // Default 3 minutes
                             console.error(`Starting crawl with timeout: ${crawlTimeout}s`);
-                            
+
                             // Progress tracking for the crawl
                             let progressTimer = setInterval(() => {
                                 const elapsedSec = (Date.now() - startCrawlTime) / 1000;
                                 console.error(`Crawl in progress... (${elapsedSec.toFixed(0)}s elapsed)`);
                             }, 15000); // Report every 15 seconds
-                            
+
                             // Ensure timer is always cleared
                             let crawlResponse: any; // Use any to avoid unknown type errors
                             try {
@@ -639,9 +646,9 @@ class DeepResearchMcpServer {
                                         categories: (crawlParams.categories ?? []) as TavilyCrawlCategory[],
                                         extractDepth: crawlParams.extractDepth ?? "basic",
                                         // Add the required timeout parameter
-                                        timeout: args.crawl_timeout ?? 180
+                                        timeout: args.crawl_timeout ?? ENV_CRAWL_TIMEOUT ?? 180
                                     }),
-                                    new Promise((_, reject) => 
+                                    new Promise((_, reject) =>
                                         setTimeout(() => reject(new Error(`Crawl timeout after ${crawlTimeout}s`)), crawlTimeout * 1000)
                                     )
                                 ]);
@@ -649,10 +656,10 @@ class DeepResearchMcpServer {
                                 clearInterval(progressTimer); // Clear timer on error
                                 throw err; // Re-throw to be caught by outer try/catch
                             }
-                            
+
                             // Clear the progress timer once the crawl is complete
                             clearInterval(progressTimer);
-                            
+
                             console.error(`Crawl completed in ${((Date.now() - startCrawlTime) / 1000).toFixed(1)}s`);
 
                             if (crawlResponse.results && crawlResponse.results.length > 0) {
@@ -671,7 +678,7 @@ class DeepResearchMcpServer {
                             if (process.memoryUsage) {
                                 const memUsage = process.memoryUsage();
                                 console.error(`Memory usage after crawl: RSS=${Math.round(memUsage.rss / 1024 / 1024)}MB, Heap=${Math.round(memUsage.heapUsed / 1024 / 1024)}MB`);
-                                
+
                                 // Force garbage collection if available and memory usage is high
                                 if (memUsage.heapUsed > 500 * 1024 * 1024 && global.gc) {
                                     console.error("Memory usage high, forcing garbage collection");
@@ -707,7 +714,7 @@ class DeepResearchMcpServer {
                 } catch (error: any) {
                     const errorMessage = error.response?.data?.error || error.message || 'An unexpected error occurred in deep-research-tool.';
                     console.error("[DeepResearchTool Error]", errorMessage, error.stack);
-                    
+
                     const errorOutput = JSON.stringify({
                         documentation_instructions: finalDocumentationPrompt,
                         error: errorMessage,
@@ -727,7 +734,7 @@ class DeepResearchMcpServer {
     public async run(): Promise<void> {
         const transport = new StdioServerTransport();
         await this.server.connect(transport);
-        
+
         // Check if we should try to enable hardware acceleration
         const useHardwareAcceleration = process.env.HARDWARE_ACCELERATION === 'true';
         if (useHardwareAcceleration) {
@@ -742,7 +749,7 @@ class DeepResearchMcpServer {
                 console.error("Failed to set hardware acceleration:", err);
             }
         }
-        
+
         console.error(
             "Deep Research MCP Server (deep-research-mcp) is running and connected via stdio.\n" +
             `Documentation prompt source: ` +
@@ -750,6 +757,14 @@ class DeepResearchMcpServer {
             `.\n` +
             `Output path: ` +
             (process.env.RESEARCH_OUTPUT_PATH ? `Environment Variable ('RESEARCH_OUTPUT_PATH')` : `Default timestamped path (can be overridden by tool argument)`) +
+            `.\n` +
+            `Timeout configuration: ` +
+            `Search=${ENV_SEARCH_TIMEOUT || 60}s, Crawl=${ENV_CRAWL_TIMEOUT || 180}s` +
+            (ENV_SEARCH_TIMEOUT || ENV_CRAWL_TIMEOUT ? ` (from environment variables)` : ` (defaults)`) +
+            `.\n` +
+            `Limits configuration: ` +
+            `MaxResults=${ENV_MAX_SEARCH_RESULTS || 7}, CrawlDepth=${ENV_CRAWL_MAX_DEPTH || 1}, CrawlLimit=${ENV_CRAWL_LIMIT || 10}` +
+            (ENV_MAX_SEARCH_RESULTS || ENV_CRAWL_MAX_DEPTH || ENV_CRAWL_LIMIT ? ` (from environment variables)` : ` (defaults)`) +
             `.\n` +
             "Awaiting requests..."
         );

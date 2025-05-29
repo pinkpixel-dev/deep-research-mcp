@@ -2,6 +2,26 @@
 
 All notable changes to the Deep Research MCP Server will be documented in this file.
 
+## [1.2.1] - 2025-05-29
+
+### Added
+- Environment variable support for timeout and performance configuration
+- `SEARCH_TIMEOUT` environment variable for configuring search request timeouts
+- `CRAWL_TIMEOUT` environment variable for configuring crawl request timeouts
+- `MAX_SEARCH_RESULTS` environment variable for setting maximum search results
+- `CRAWL_MAX_DEPTH` environment variable for setting maximum crawl depth
+- `CRAWL_LIMIT` environment variable for setting maximum URLs to crawl per source
+- Enhanced startup logging showing current timeout and limit configurations
+- Updated example configuration with new environment variables
+
+### Fixed
+- Timeout configuration now properly respects environment variables in addition to tool parameters
+- LibreChat timeout issues can now be resolved by setting appropriate environment variables
+
+### Changed
+- Tool parameter precedence: tool arguments > environment variables > defaults
+- Improved documentation with detailed timeout and performance configuration guide
+
 ## [1.2.0] - 2024-05-29
 
 ### Fixed
@@ -33,4 +53,4 @@ All notable changes to the Deep Research MCP Server will be documented in this f
 - MCP compliant tool interface
 - Structured JSON output for LLM consumption
 - Configurable documentation prompt
-- Configurable output path 
+- Configurable output path

@@ -1,4 +1,4 @@
-<!--- ✨ OVERVIEW.md for Deep Research MCP Server (Last Updated: May 10, 2025) ✨ --->
+<!--- ✨ OVERVIEW.md for Deep Research MCP Server (Last Updated: May 29, 2025) ✨ --->
 
 <h1 align="center"><span style="color:#7f5af0;">Deep Research MCP Server</span> ✨</h1>
 <p align="center"><b><span style="color:#2cb67d;">Dream it, Pixel it</span></b> — <i>by Pink Pixel</i></p>
@@ -108,4 +108,4 @@ deep-research-mcp/
 
 ---
 
-<p align="center"><span style="color:#7f5af0;">Made with ❤️ by Pink Pixel</span></p> 
+<p align="center"><span style="color:#7f5af0;">Made with ❤️ by Pink Pixel</span></p>

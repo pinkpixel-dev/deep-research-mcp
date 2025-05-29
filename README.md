@@ -71,16 +71,21 @@ The server requires a Tavily API key and can optionally accept a custom document
 ```json
 {
   "mcpServers": {
-    "deep-research": { 
+    "deep-research": {
       "command": "npx",
       "args": [
         "-y",
-        "@pinkpixel/deep-research-mcp" 
+        "@pinkpixel/deep-research-mcp"
       ],
       "env": {
         "TAVILY_API_KEY": "tvly-YOUR_ACTUAL_API_KEY_HERE", // Required
         "DOCUMENTATION_PROMPT": "Your custom, detailed instructions for the LLM on how to generate markdown documents from the research data...", // Optional - if not provided, the default prompt will be used
-        "RESEARCH_OUTPUT_PATH": "/path/to/your/research/output/folder" // Optional - if not provided, the default path will be used
+        "RESEARCH_OUTPUT_PATH": "/path/to/your/research/output/folder", // Optional - if not provided, the default path will be used
+        "SEARCH_TIMEOUT": "120", // Optional - timeout in seconds for search requests (default: 60)
+        "CRAWL_TIMEOUT": "300", // Optional - timeout in seconds for crawl requests (default: 180)
+        "MAX_SEARCH_RESULTS": "10", // Optional - maximum search results to retrieve (default: 7)
+        "CRAWL_MAX_DEPTH": "2", // Optional - maximum crawl depth (default: 1)
+        "CRAWL_LIMIT": "15" // Optional - maximum URLs to crawl per source (default: 10)
       }
     }
   }
@@ -146,6 +151,41 @@ RESEARCH_OUTPUT_PATH="/path/to/your/research/folder"
 ```bash
 RESEARCH_OUTPUT_PATH="/path/to/your/research/folder" TAVILY_API_KEY="tvly-YOUR_KEY" npx @pinkpixel/deep-research-mcp
 ```
+
+### 4\. Timeout and Performance Configuration (Optional)
+
+You can configure timeout and performance settings via environment variables to optimize the tool for your specific use case or deployment environment:
+
+**Available Environment Variables:**
+
+- `SEARCH_TIMEOUT` - Timeout in seconds for Tavily search requests (default: 60)
+- `CRAWL_TIMEOUT` - Timeout in seconds for Tavily crawl requests (default: 180)
+- `MAX_SEARCH_RESULTS` - Maximum number of search results to retrieve (default: 7)
+- `CRAWL_MAX_DEPTH` - Maximum crawl depth from base URL (default: 1)
+- `CRAWL_LIMIT` - Maximum number of URLs to crawl per source (default: 10)
+
+**Setting via `.env` file:**
+
+```env
+SEARCH_TIMEOUT=120
+CRAWL_TIMEOUT=300
+MAX_SEARCH_RESULTS=10
+CRAWL_MAX_DEPTH=2
+CRAWL_LIMIT=15
+```
+
+**Or directly in command line:**
+
+```bash
+SEARCH_TIMEOUT=120 CRAWL_TIMEOUT=300 TAVILY_API_KEY="tvly-YOUR_KEY" npx @pinkpixel/deep-research-mcp
+```
+
+**When to adjust these settings:**
+
+- **Increase timeouts** if you're experiencing timeout errors in LibreChat or other MCP clients
+- **Decrease timeouts** for faster responses when working with simpler queries
+- **Increase limits** for more comprehensive research (but expect longer processing times)
+- **Decrease limits** for faster processing with lighter resource usage
 
 ## Running the Server
 
