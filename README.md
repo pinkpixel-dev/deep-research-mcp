@@ -7,6 +7,7 @@
 <p align="center">
   <a href="https://www.npmjs.com/package/@pinkpixel/deep-research-mcp"><img src="https://img.shields.io/npm/v/@pinkpixel/deep-research-mcp.svg" alt="NPM Version"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
+  <a href="https://smithery.ai/server/@pinkpixel/dev-deep-research-mcp"><img src="https://smithery.ai/badge/@pinkpixel/dev-deep-research-mcp" alt="Smithery Installs"></a>
 </p>
 
 The Deep Research MCP Server is a Model Context Protocol (MCP) compliant server designed to perform comprehensive web research. It leverages Tavily's powerful Search and new Crawl APIs to gather extensive, up-to-date information on a given topic. The server then aggregates this data along with documentation generation instructions into a structured JSON output, perfectly tailored for Large Language Models (LLMs) to create detailed and high-quality markdown documents.
@@ -31,6 +32,14 @@ The Deep Research MCP Server is a Model Context Protocol (MCP) compliant server 
 * [npm](https://www.npmjs.com/) (comes with Node.js) or [Yarn](https://yarnpkg.com/)
 
 ## Installation
+
+### Installing via Smithery
+
+To install deep-research-mcp for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@pinkpixel/dev-deep-research-mcp):
+
+```bash
+npx -y @smithery/cli install @pinkpixel/dev-deep-research-mcp --client claude
+```
 
 ### Option 1: Using with NPX (Recommended for quick use)
 
