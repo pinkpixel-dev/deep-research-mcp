@@ -1,0 +1,62 @@
+# Smithery configuration file: https://smithery.ai/docs/build/project-config
+
+startCommand:
+  type: stdio
+  commandFunction:
+    # A JS function that produces the CLI command based on the given config to start the MCP on stdio.
+    |-
+    (config) => ({ command: 'node', args: ['dist/index.js'], env: { TAVILY_API_KEY: config.tavilyApiKey, ...(config.documentationPrompt !== undefined && { DOCUMENTATION_PROMPT: config.documentationPrompt }), ...(config.searchTimeout !== undefined && { SEARCH_TIMEOUT: config.searchTimeout.toString() }), ...(config.crawlTimeout !== undefined && { CRAWL_TIMEOUT: config.crawlTimeout.toString() }), ...(config.maxSearchResults !== undefined && { MAX_SEARCH_RESULTS: config.maxSearchResults.toString() }), ...(config.crawlMaxDepth !== undefined && { CRAWL_MAX_DEPTH: config.crawlMaxDepth.toString() }), ...(config.crawlLimit !== undefined && { CRAWL_LIMIT: config.crawlLimit.toString() }), ...(config.fileWriteEnabled !== undefined && { FILE_WRITE_ENABLED: config.fileWriteEnabled.toString() }), ...(config.allowedWritePaths !== undefined && { ALLOWED_WRITE_PATHS: config.allowedWritePaths }), ...(config.fileWriteLineLimit !== undefined && { FILE_WRITE_LINE_LIMIT: config.fileWriteLineLimit.toString() }) }} )
+  configSchema:
+    # JSON Schema defining the configuration options for the MCP.
+    type: object
+    required:
+      - tavilyApiKey
+    properties:
+      tavilyApiKey:
+        type: string
+        description: Tavily API key for authentication.
+      documentationPrompt:
+        type: string
+        description: Optional custom documentation prompt to override default.
+      searchTimeout:
+        type: number
+        default: 60
+        description: Optional timeout in seconds for search requests.
+      crawlTimeout:
+        type: number
+        default: 180
+        description: Optional timeout in seconds for crawl requests.
+      maxSearchResults:
+        type: number
+        default: 7
+        description: Optional maximum number of search results to retrieve.
+      crawlMaxDepth:
+        type: number
+        default: 1
+        description: Optional maximum crawl depth from source URL.
+      crawlLimit:
+        type: number
+        default: 10
+        description: Optional maximum number of URLs to crawl per source.
+      fileWriteEnabled:
+        type: boolean
+        default: false
+        description: Enable file writing tool.
+      allowedWritePaths:
+        type: string
+        description: Comma-separated allowed directories for file writing.
+      fileWriteLineLimit:
+        type: number
+        default: 200
+        description: Maximum lines per file write operation.
+  exampleConfig:
+    tavilyApiKey: tvly-EXAMPLE_KEY_12345
+    documentationPrompt: Generate a concise summary of key findings.
+    searchTimeout: 120
+    crawlTimeout: 300
+    maxSearchResults: 10
+    crawlMaxDepth: 2
+    crawlLimit: 15
+    fileWriteEnabled: false
+    allowedWritePaths: /home/user/research,/tmp
+    fileWriteLineLimit: 300
