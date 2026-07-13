@@ -2,6 +2,13 @@
 
 All notable changes to the Deep Research MCP Server will be documented in this file.
 
+## [1.3.3] - 2025-07-12
+
+### Fixed
+- Updated dependencies
+- Updated package version
+- Changed package license to Apache-2.0
+
 ## [1.2.1] - 2025-05-29
 
 ### Added

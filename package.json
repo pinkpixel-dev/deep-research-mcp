@@ -1,6 +1,6 @@
 {
   "name": "@pinkpixel/deep-research-mcp",
-  "version": "1.3.1",
+  "version": "1.3.3",
   "description": "A Model Context Protocol (MCP) server for performing deep web research using Tavily Search and Crawl APIs, preparing structured data for LLM-powered documentation generation.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -31,7 +31,7 @@
     "documentation"
   ],
   "author": "PinkPixel",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.11.1",
     "@tavily/core": "^0.5.2",

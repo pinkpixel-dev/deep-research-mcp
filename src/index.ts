@@ -389,13 +389,13 @@ class DeepResearchMcpServer {
         this.server = new Server(
             {
                 name: "deep-research-mcp",
-                version: "1.3.1", // Version with file writing tool and path validation fixes
+                version: "1.3.3",
             },
             {
                 capabilities: {
                     resources: {},
                     tools: {},
-                    prompts: {}, // Prompts handled by the tool's output logic
+                    prompts: {},
                 },
             }
         );
